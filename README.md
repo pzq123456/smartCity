@@ -129,6 +129,33 @@ A --> F[Artificial Intelligence]
 
 在 3D Gaussian Splatting 中，场景通常被表示为一组点，每个点都带有诸如位置、颜色、强度或其他标量值等属性。
 
+At a high level, 3D Gaussian splats, like NeRFs or photogrammetry methods, are a way to create a 3D scene using a set of 2D images. Practically, this means that all you need is a video or a set of photos of a scene, to obtain a 3D representation of it — enabling you to reshoot it, or render it from any angle.
+
+从高层次来看，3D Gaussian splats（类似于NeRFs或摄影测量方法）是一种使用一组2D图像创建3D场景的方法。实际上，这意味着你只需要一个场景的视频或一组照片，就可以获得它的3D表示，从而使你能够从任何角度重新拍摄或渲染它。
+
+Each 3D Gaussian is optimized along with a (viewdependant) color and opacity. When blended together, here's the visualization of the full model, rendered from ANY angle. As you can see, 3D Gaussian Splatting captures extremely well the fuzzy and soft nature of the plush toy, something that photogrammetry-based methods struggle to do.
+
+每一个3D高斯都与一个（视角相关的）颜色和不透明度一起进行优化。当它们混合在一起时，这是从任何角度渲染的完整模型的可视化。正如你所看到的，3D高斯喷洒非常好地捕捉了毛绒玩具的模糊和柔软的特性，而摄影测量方法则很难做到这一点。
+
+### 简短的训练教程
+1. Structure from Motion 从图像中估计3D点云
+
+   第一步是使用SfM方法从一组图像估计一个点云。这是一种从一组2D图像估计3D点云的方法。这可以用COLMAP库来完成。
+
+2. Convert to Gaussians 
+
+   接下来，每个点都被转换成一个（三维）高斯。这已经足以进行光栅化。然而，只有位置和颜色可以从SfM数据中推断出来。为了学习一个产生高质量结果的表示，我们需要对其进行训练。
+
+3. Training
+
+   训练过程使用随机梯度下降，类似于神经网络。训练步骤如下：
+
+   1. 使用可微分的高斯光栅化将高斯光栅化到图像中
+   2. 根据光栅化图像和真实图像之间的差异计算损失
+   3. 根据损失调整高斯参数（位置、颜色、不透明度）
+   4. 应用自动致密化和修剪（删除不透明度低的高斯、合并重叠的高斯等）
+
+
 ## Reference 
 1. [Moore's Law for Everything](https://moores.samaltman.com)
 2. [CityGen: Infinite and Controllable 3D City Layout Generation](https://arxiv.org/pdf/2312.01508.pdf)
