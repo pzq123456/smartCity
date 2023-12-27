@@ -13,8 +13,8 @@
    - 山东省行政区划数据：山东省的行政区划使用高德地图提供的 JSON 数据转化为 Shape 文件，然后上传至 GEE 平台。
   
    - ![](imgs/山东行政区划.jpg)
-2. 气象数据收集
-   
+2. 气象数据收集: 气象数据采用 [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3) 数据集提供的高精度月度全球气象数据，其中包含 10 个气象指标，分别是：
+
    1. cld : cloud amount 是云量，即云的覆盖程度。
    2. dtr : diurnal temperature range 是日较差，即最高温和最低温度的差值。
    3. frs : 月霜冻日数，即月度霜冻日数。
@@ -25,9 +25,16 @@
    8. tmx : mean of maximum temperature 是最高温度的平均值。
    9.  vap : vapor pressure 是水汽压。
    10. wet : wet day frequency 是湿日频率，即年度湿日数。
-   
+
+   ![](imgs/CRU.png)
+   > CRU TS变量，显示代码、单位、相关衰减距离（CDD）和前驱因素
+   > - wet：湿日是指降水量 ≥ 0.1毫米的日子
+   > - tmn,tmx：最低和最高温度是每月个别日最低和最高温度的平均值，它们不是每月记录的整体最低或最高温度
+
+
 3. 地形数据收集: 使用山东省行政区划边界裁剪 DEM 数据，并计对应县市区的平均高程。
 
 
 ## Reference
-1. [全国省市县矢量边界提取kml,shp,svg格式下载](https://dx3377.com/map/bound)
+1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
+2. [全国省市县矢量边界提取kml,shp,svg格式下载](https://dx3377.com/map/bound)
