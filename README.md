@@ -33,7 +33,36 @@
 
 
 3. 地形数据收集: 使用山东省行政区划边界裁剪 DEM 数据，并计对应县市区的平均高程。
+   3.1 GEE 平台数据获取: 以下是处理代码。从平台上提供的 SRTM30 数据集下载山东省 30 米分辨率的 DEM 数据及坡度数据。而后根据每一个县的中心点坐标获取对应的 DEM 及坡度数据，以便后续分析。
+   ```js
+      var elevation = SRTM30.select('elevation').clip(SD);
+      var slope = ee.Terrain.slope(elevation);
+      // 可视化参数
+      var args = {
+         crs: 'EPSG:3857',
+         dimensions: '300',
+         region: SD,
+         min: -2000,
+         max: 10000,
+         palette: 'green, blanchedalmond,orange,black ',
+         framesPerSecond: 12,
+      };
+      //  Map.addLayer(elevation,args,'elevation');
+      //  Map.addLayer(slope,{},'slope');
+      Export.image.toDrive({
+      image: elevation,   
+      scale: 30, 
+      maxPixels: 1e13,
+      region: SD });
 
+      Export.image.toDrive({
+      image: slope,
+      scale: 30,
+      maxPixels: 1e13,
+      region: SD });
+   ```
+   ![](imgs/DEM.jpg)
+   ![](imgs/slope.jpg)
 
 ## Reference
 1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
