@@ -161,3 +161,7 @@ cython_debug/
 #.idea/
 data/DEM.tif
 data/slope.tif
+data/CRU.zip
+data/.DS_Store
+data/.DS_Store
+.DS_Store
