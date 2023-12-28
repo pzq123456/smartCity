@@ -3,10 +3,13 @@ import netCDF4
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+import tqdm # 进度条
+import pandas as pd
+
 
 dataType = ['cld','dtr','pet','pre','tmp','vap'] # 数据类型用于生成文件名
-inPath = "/data/CRU/" # 数据路径
-outPath = "/data/CRU/processed/" # 输出路径
+inPath = "data/CRU/" # 数据路径
+outPath = "data/CRU/processed/" # 输出路径
 year = [2011,2020] # 数据年份
 
 def getFileName(year,dataType):
@@ -16,15 +19,6 @@ def getFileName(year,dataType):
     return: 文件名
     '''
     return 'cru_ts4.06.'+str(year[0])+'.'+str(year[1])+'.'+dataType+'.dat.nc'
-
-def getPath(inPath,year,dataType):
-    '''
-    inPath: 数据路径
-    year: 数据年份
-    dataType: 数据类型
-    return: 完整路径
-    '''
-    return inPath+getFileName(year,dataType)
 
 # 辅助函数
 def getLocation(oriLat,oriLon):
@@ -77,41 +71,94 @@ def HelpF1(x,top,button):
     else:
         return I+top
 
-def readData(inPath,year,dataType):
+def readData(inPath,year,Type):
     '''
     inPath: 数据路径
     year: 数据年份
-    dataType: 数据类型
+    Type: 数据类型
     return: 数据
     '''
-    f = netCDF4.Dataset(getPath(inPath,year,dataType))
-    data = f.variables[dataType]
-    # 以键值对的形式存储数据 键为 dataType
+    fileName = getFileName(year,Type)
+    file = netCDF4.Dataset(inPath+fileName)
+    data = file.variables[Type][:]
+    file.close()
+    return data
+
+def getDataDict(year,dataType):
+    '''
+    将数据类型作为键，数据作为值，生成字典
+    year: 数据年份
+    dataType: 数据类型
+    return: 数据字典
+    '''
+    dataDict = {}
+    for i in dataType:
+        dataDict[i] = readData(inPath,year,i)
+    return dataDict
+
+# 接受 dataDict 字典、location 位置 查找 location 位置的数据
+def getData(dataDict,location):
+    '''
+    dataDict: 数据字典
+    location: 位置
+    return: 数据
+    '''
+    lat,lon = getLocation(location[1],location[0])
+    latIndex,lonIndex = getLocIndex(lat,lon)
+    data = {}
+    for i in dataDict:
+        data[i] = dataDict[i][:,latIndex,lonIndex]
+    return data
+
+# 将字典拼接成矩阵
+def dict2matrix(dataDict):
+    '''
+    dataDict: 数据字典
+    return: 数据矩阵
+    '''
+    matrix = []
+    for i in dataDict:
+        matrix.append(dataDict[i])
+    return np.array(matrix)
+
+def getMetaData(path):
+    '''
+    path: csv 文件路径
+    return: csv 文件数据
+    '''
+    # 读取 csv 文件 并处理为经纬度列表
+    # 使用 pandas 读取 csv 文件
+    data = pd.read_csv(path)
+    return data
+
+def LoadData(path):
+    '''
+    path: csv 文件路径
+    return: 数据矩阵
+    '''
+    # 读取 csv 文件 并处理为经纬度列表
+    # 使用 pandas 读取 csv 文件
+    data = pd.read_csv(path)
     return data
 
 
 
+if __name__ == "__main__":
+
+    metadata = getMetaData('county.csv')
+    dataDict = getDataDict(year,dataType)
+
+    # 主循环
+    for i in tqdm.tqdm(metadata.values):
+        # print("正在处理：",i[0],i[1])
+        location = [i[2],i[3]]
+        data = getData(dataDict,location)
+        # 设置精度
+        np.set_printoptions(precision=4)
+        matrix = dict2matrix(data)
+        np.savetxt(outPath+str(i[0])+'.csv',matrix,delimiter=',')
+    
+    print("数据处理完成！"+outPath)
 
 
-
-# # 读取数据
-# def readData():
-#     # windows
-#     # f1 = netCDF4.Dataset('data/cru_ts4.06.2001.2010.pre.dat.nc')
-#     # f2 = netCDF4.Dataset('data/cru_ts4.06.2001.2010.tmp.dat.nc')
-#     # f3 = netCDF4.Dataset('data/cru_ts4.06.2001.2010.tmx.dat.nc')
-#     # f4 = netCDF4.Dataset('data/cru_ts4.06.2011.2020.tmn.dat.nc')
-#     # linux
-#     f1 = netCDF4.Dataset('DTZT/data/cru_ts4.06.2001.2010.pre.dat.nc')
-#     f2 = netCDF4.Dataset('DTZT/data/cru_ts4.06.2001.2010.tmp.dat.nc')
-#     f3 = netCDF4.Dataset('DTZT/data/cru_ts4.06.2001.2010.tmx.dat.nc')
-#     f4 = netCDF4.Dataset('DTZT/data/cru_ts4.06.2011.2020.tmn.dat.nc')
-
-#     pre = f1.variables['pre'] # 逐月降水量 10年
-#     tmp = f2.variables['tmp'] # 月均温 
-#     tmx = f3.variables['tmx'] # 月最高温
-#     tmn = f4.variables['tmn'] # 月最低温
-#     lat = f1.variables['lat'] # 纬度
-#     lon = f1.variables['lon'] # 经度
-#     return pre,tmp,tmx,tmn,lat,lon
 

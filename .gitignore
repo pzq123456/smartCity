@@ -168,3 +168,17 @@ data/.DS_Store
 data/地形/slope.tif
 data/地形/DEM.tif
 data/地形.zip
+data/CRU/cru_ts4.06.01.2011.2020.cld.dat.nc.gz
+data/CRU/cru_ts4.06.2011.2020.dtr.dat.nc.gz
+data/CRU/cru_ts4.06.2011.2020.pet.dat.nc.gz
+data/CRU/cru_ts4.06.2011.2020.pre.dat.nc.gz
+data/CRU/cru_ts4.06.2011.2020.tmp.dat.nc.gz
+data/CRU/cru_ts4.06.2011.2020.vap.dat.nc.gz
+data/CRU/cru_ts4.06.01.2011.2020.cld.dat.nc
+data/CRU/cru_ts4.06.2011.2020.dtr.dat.nc
+data/CRU/cru_ts4.06.2011.2020.pet.dat.nc
+data/CRU/cru_ts4.06.2011.2020.pre.dat.nc
+data/CRU/cru_ts4.06.2011.2020.tmp.dat.nc
+data/CRU/cru_ts4.06.2011.2020.vap.dat.nc
+data/CRU/cru_ts4.06.2011.2020.cld.dat.nc
+data/CRU/processed.zip
