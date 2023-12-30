@@ -86,12 +86,37 @@
       |tmp|-3.500000000000000000e+0|2.000000000000000000e+0|...|~|
       |vap|1.600000023841857910e+00|3.500000000000000000e+00|...|~|
 
+   1.3. 各气象要素相关性分析(以济南市 120 个月的数据为例)
+   ![](imgs/heatmap.png)
 2. 地形数据处理
+
+## 模型
+1. 概述：
+   > - 时间序列分析包括分析时间序列数据的方法，以提取数据的有意义的统计数据和其他特征。时间序列预测是使用模型根据先前观察到的值来预测未来值。虽然回归分析通常被用来测试一个或多个不同时间序列之间的关系，但这种类型的分析通常不被称为“时间序列分析”，这种分析特指单个序列中不同时间点之间的关系。
+
+   - 模型选择：考虑到我们收集的气象数据是典型的时间序列数据，因此我们采用循环神经网络来分析气象数据。
+   - 输入输出：我们的输入数据是气象参数时间序列，输出数据降水量序列。
+     - 例如，对于某一区域，我们有 2011.1 至 2020.12 共计 120 个月的 5 参数气象数据，将它们排列为矩阵就是：$X_{5\times 120}$，其中 $X$ 为气象数据矩阵，5 为气象参数个数，120 为时间序列长度。
+     - 而我们的输出数据是降水量序列，也就是 2011.1 至 2020.12 共计 120 个月的降水量数据，将它们排列为矩阵就是：$Y_{1\times 120}$，其中 $Y$ 为降水量数据矩阵，1 为降水量参数个数，120 为时间序列长度。
+
+2. 模型结构：LSTM(长短期记忆网络)
+   - LSTM 是一种时间循环神经网络，由于其特殊的结构，可以很好进行时间序列的分析。
+   - LSTM 的结构如下图所示：
+      ![](imgs/LSTM.png)
+      - LSTM 的核心思想是：在每个时间步，都会有一个输出 $h_t$ 和一个记忆单元 $c_t$，它们的计算公式如下：
+         - $f_t=\sigma(W_f\cdot[h_{t-1},x_t]+b_f)$
+         - $i_t=\sigma(W_i\cdot[h_{t-1},x_t]+b_i)$
+         - $\tilde{c}_t=\tanh(W_c\cdot[h_{t-1},x_t]+b_c)$
+         - $c_t=f_t\cdot c_{t-1}+i_t\cdot\tilde{c}_t$
+         - $o_t=\sigma(W_o\cdot[h_{t-1},x_t]+b_o)$
+         - $h_t=o_t\cdot\tanh(c_t)$
+
 
 ## Reference
 1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
 2. [全国省市县矢量边界提取kml,shp,svg格式下载](https://dx3377.com/map/bound)
 3. [SRTM30 DOCUMENTATION](https://icesat.gsfc.nasa.gov/icesat/tools/SRTM30_Documentation.html)
+4. [Time series](https://en.wikipedia.org/wiki/Time_series)
 
 
 
