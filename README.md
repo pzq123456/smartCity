@@ -111,6 +111,31 @@
          - $o_t=\sigma(W_o\cdot[h_{t-1},x_t]+b_o)$
          - $h_t=o_t\cdot\tanh(c_t)$
 
+## 模型训练
+1. 数据集划分：我们将数据集划分为训练集、测试集，其中训练集占 80%，测试集占 20%。模型在训练集上训练，然后在测试集上测试。数据集划分函数：
+   ```python
+   def train_test_idx(total, train_ratio=0.8, startByOne=True):
+    '''
+    传入数据集的总数
+    返回一个 list 包含所有数据的索引 乱序
+    '''
+    if startByOne: # [1,2,3,4,5,6,7,8,9,10]
+        idx = np.arange(1, total+1)
+    else: # [0,1,2,3,4,5,6,7,8,9]
+        idx = np.arange(total)
+
+    np.random.shuffle(idx)
+    train_idx = idx[:int(total*train_ratio)]
+    test_idx = idx[int(total*train_ratio):]
+    return train_idx, test_idx
+
+    if __name__ == '__main__':
+
+    # use train_test_idx to get train_idx and test_idx and save as csv
+    train_idx, test_idx = train_test_idx(116)
+    np.savetxt('data/CRU/processed/train_idx.csv', train_idx, delimiter=',', fmt='%d')
+    np.savetxt('data/CRU/processed/test_idx.csv', test_idx, delimiter=',', fmt='%d')
+   ```
 
 ## Reference
 1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
