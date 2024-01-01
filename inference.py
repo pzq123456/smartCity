@@ -1,14 +1,13 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import torch
-
+from utils import MSE,monthName
 from dataset import MyDataset
-# from torch.utils.data import (
-#     DataLoader,
-# )
+import tqdm
 
 from model import RNN_LSTM  # Gives easier dataset managment by creating mini batches etc.
 from sklearn.preprocessing import MinMaxScaler # 数据规范化
+
 # 数据规范化
 scaler_X = MinMaxScaler()
 scaler_y = MinMaxScaler()
@@ -37,35 +36,64 @@ def load_model(model, optimizer, path):
 
 # Load Data
 test_idx = np.loadtxt('data/CRU/processed/test_idx.csv', delimiter=',', dtype=np.int32)
-
 # 创建数据集
 test_dataset = MyDataset(test_idx, 'data/CRU/processed/', transformX=scaler_X.fit_transform, transformY=scaler_y.fit_transform)
+
 
 # inference
 # load_model(model, optimizer, save_path('model/', 'model'))
 model_path = save_path('model/', 'model')
-data,label = test_dataset[10]
-data = data.unsqueeze(0)
-data = data.to(device=device)
-label = label.to(device=device)
-
 # Initialize network (try out just using simple RNN, or GRU, and then compare with LSTM)
 model = RNN_LSTM(input_size, hidden_size, num_layers, pridict_lenth).to(device)
-
 model.load_state_dict(torch.load(model_path)['model_state_dict']) # 加载模型
 model.eval() # 设置为评估模式
 
-with torch.no_grad():
-    scores = model(data)
-    scores = scaler_y.inverse_transform(scores.cpu().numpy())
-    label = scaler_y.inverse_transform([label.cpu().numpy()])
-    print(scores)
-    print(label)
-    # 保存为 csv
-    np.savetxt('scores.csv', scores, delimiter=',')
-    np.savetxt('label.csv', label, delimiter=',')
+MSEs = [] # 保存每个样本的 MSE
+inference = [] # 保存每个样本的预测值
+idx = []
 
-    plt.plot(scores[0], label='predict')
-    plt.plot(label[0], label='real')
-    plt.legend()
-    plt.show()
+for i in tqdm.tqdm(range(len(test_dataset))):
+    data, label = test_dataset[i]
+    data = data.unsqueeze(0)
+    data = data.to(device=device)
+    label = label.to(device=device)
+    with torch.no_grad():
+        scores = model(data)
+        scores = scaler_y.inverse_transform(scores.cpu().numpy())
+        label = scaler_y.inverse_transform([label.cpu().numpy()])
+        scores = scores.squeeze()
+        label = label.squeeze()
+        inference.append(scores)
+        MSEs.append(MSE(scores, label))
+        idx.append(test_idx[i]) # 保存样本的索引
+    # break # 只测试一个样本
+
+print("save result")
+
+# 将 MSE, inference, idx 组织成一个 csv 文件
+MSEs = np.array(MSEs)
+inference = np.array(inference)
+idx = np.array(idx)
+# 表结构：idx, MSE, 2011-1, 2011-2, ..., 2011-12, 2012-1, 2012-2, ..., 2020-12 其中 2011-1 表示 2011 年 1 月的预测值
+monthNames = [monthName(i) for i in range(120)]
+
+# 生成表头
+header = ['idx', 'MSE']
+header.extend(monthNames)
+# 生成表内容
+content = []
+for i in range(len(idx)):
+    row = [idx[i], MSEs[i]]
+    row.extend(inference[i])
+    content.append(row)
+# 保存为 csv 文件
+np.savetxt('result.csv', content, delimiter=',', fmt='%s', header=','.join(header))
+
+
+
+
+
+
+
+
+
