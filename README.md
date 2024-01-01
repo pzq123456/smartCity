@@ -101,7 +101,7 @@
 
 2. 模型结构：LSTM(长短期记忆网络)
    - LSTM 是一种时间循环神经网络，由于其特殊的结构，可以很好进行时间序列的分析。
-   - LSTM 的结构如下图所示：
+   - LSTM 模块的结构如下图所示：
       ![](imgs/LSTM.png)
       - LSTM 的核心思想是：在每个时间步，都会有一个输出 $h_t$ 和一个记忆单元 $c_t$，它们的计算公式如下：
          - $f_t=\sigma(W_f\cdot[h_{t-1},x_t]+b_f)$
@@ -110,6 +110,35 @@
          - $c_t=f_t\cdot c_{t-1}+i_t\cdot\tilde{c}_t$
          - $o_t=\sigma(W_o\cdot[h_{t-1},x_t]+b_o)$
          - $h_t=o_t\cdot\tanh(c_t)$
+
+3. 模型代码实现(基于 pytorch 库)
+   该模型是在循环神经网络的基础上，加入了 LSTM 模块，代码如下：
+   ```py
+   # Recurrent neural network with LSTM (many-to-many)
+   class RNN_LSTM(nn.Module):
+      def __init__(self, input_size, hidden_size, num_layers, num_classes):
+         super(RNN_LSTM, self).__init__()
+         self.hidden_size = hidden_size
+         self.num_layers = num_layers
+         # self.cnn2d = nn.Conv2d(1, 1, (1, 5))
+         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+         # self.fc = nn.Linear(hidden_size * sequence_length, num_classes, bias=True)
+         # 将 120 个月的数值 每个月的数值控制在 0-300 之间
+         self.fc = nn.Linear(hidden_size * sequence_length, num_classes, bias=True)
+         
+      def forward(self, x):
+         # Set initial hidden and cell states
+         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
+         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
+
+         # Forward propagate LSTM
+         out, _ = self.lstm(
+               x, (h0, c0)
+         )  # out: tensor of shape (batch_size, seq_length, hidden_size)
+         out = out.reshape(out.shape[0], -1)
+         out = self.fc(out)
+         return out
+   ```
 
 ## 模型训练
 1. 数据集划分：我们将数据集划分为训练集、测试集，其中训练集占 80%，测试集占 20%。模型在训练集上训练，然后在测试集上测试。数据集划分函数：
@@ -136,12 +165,81 @@
     np.savetxt('data/CRU/processed/train_idx.csv', train_idx, delimiter=',', fmt='%d')
     np.savetxt('data/CRU/processed/test_idx.csv', test_idx, delimiter=',', fmt='%d')
    ```
+2. 模型训练
+   - 输入数据为 $X_{5\times 120}$，输出数据为 $Y_{1\times 120}$，其中 $X$ 为气象数据矩阵，5 为气象参数个数，120 为时间序列长度，$Y$ 为降水量数据矩阵，1 为降水量参数个数，120 为时间序列长度。
+   - 模型训练：模型会根据输入数据 $X$ 和输出数据 $Y$ 来调整自身的参数，使得输出数据 $Y$ 越来越接近真实的降水量数据。
+   - 模型数据流图:
+   ```mermaid
+      graph LR
+      A[气象数据] --> B[模型]
+      B --> C[预测降水量]
+      C --> D[真实降水量]
+      D --> E[计算误差]
+      E --> F[误差反向传播]
+      F --> G[调整模型参数]
+      G --> B
 
+      style A fill:#a3a
+      style G fill:#a3a
+   ```
+   - 模型训练代码: 训练代码如下，其中 `train_loader` 是训练数据集，`test_loader` 是测试数据集，`model` 是模型，`criterion` 是损失函数，`optimizer` 是优化器，`num_epochs` 是训练轮数。
+   ```py
+   # ...
+   min_loss = 1000000
+   losses = []
+   accs = []
+   # Train Network
+   for epoch in range(num_epochs):
+      for batch_idx, (data, targets) in enumerate(tqdm(train_loader)):
+         # Get data to cuda if possible
+         data = data.to(device=device)
+         targets = targets.to(device=device)
+         # forward
+         scores = model(data)
+         loss = criterion(scores, targets)
+         # backward
+         optimizer.zero_grad()
+         loss.backward()
+         # gradient descent update step/adam step
+         optimizer.step()
+         losses.append(loss.item())
+      # check_accuracy(test_loader, model, error=0.1)
+   save_model(model, optimizer, save_path('model/', 'model'))
+   plot_loss(losses)
+   ```
+## 模型推理及结果分析
+1. 模型推理代码: 推理代码如下，其中 `model_path` 是模型保存的路径，`data` 是输入数据，`label` 是真实的降水量数据。
+   ```py
+   # inference
+   # load_model(model, optimizer, save_path('model/', 'model'))
+   model_path = save_path('model/', 'model')
+   data,label = test_dataset[10]
+   data = data.unsqueeze(0)
+   data = data.to(device=device)
+   label = label.to(device=device)
+
+   # Initialize network (try out just using simple RNN, or GRU, and then compare with LSTM)
+   model = RNN_LSTM(input_size, hidden_size, num_layers, pridict_lenth).to(device)
+   model.load_state_dict(torch.load(model_path)['model_state_dict']) # 加载模型
+   model.eval() # 设置为评估模式
+   with torch.no_grad():
+      scores = model(data)
+      scores = scaler_y.inverse_transform(scores.cpu().numpy())
+      label = scaler_y.inverse_transform([label.cpu().numpy()])
+      print(scores)
+      print(label)
+      # 保存为 csv
+      np.savetxt('scores.csv', scores, delimiter=',')
+      np.savetxt('label.csv', label, delimiter=',')
+
+      plt.plot(scores[0], label='predict')
+      plt.plot(label[0], label='real')
+      plt.legend()
+      plt.show()
+   ```
+2.模型推理结果误差分析
 ## Reference
 1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
 2. [全国省市县矢量边界提取kml,shp,svg格式下载](https://dx3377.com/map/bound)
 3. [SRTM30 DOCUMENTATION](https://icesat.gsfc.nasa.gov/icesat/tools/SRTM30_Documentation.html)
 4. [Time series](https://en.wikipedia.org/wiki/Time_series)
-
-
-

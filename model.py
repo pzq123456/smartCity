@@ -62,10 +62,6 @@ class RNN_LSTM(nn.Module):
         # 将 120 个月的数值 每个月的数值控制在 0-300 之间
         self.fc = nn.Linear(hidden_size * sequence_length, num_classes, bias=True)
         
-
-
-
-
     def forward(self, x):
         # Set initial hidden and cell states
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
