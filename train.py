@@ -45,8 +45,8 @@ def check_accuracy(loader, model,error=0.5):
             y = y.to(device=device)
             scores = model(x)
             scores = scaler_y.inverse_transform(scores.cpu().numpy())
-            num_correct += (torch.abs(scores - y) < error).sum()
-            num_samples += scores.size(1)
+            num_correct += np.sum(np.abs(scores - scaler_y.inverse_transform(y.cpu().numpy())) < error)
+            num_samples += x.shape[0]
     
     print(
         f"Got {num_correct} / {num_samples} with accuracy {float(num_correct)/float(num_samples)*100:.2f}"
@@ -68,7 +68,7 @@ pridict_lenth = 120
 sequence_length = 120
 learning_rate = 0.005
 batch_size = 4
-num_epochs = 20
+num_epochs = 10
 
 # Initialize network (try out just using simple RNN, or GRU, and then compare with LSTM)
 model = RNN_LSTM(input_size, hidden_size, num_layers, pridict_lenth).to(device)
@@ -82,8 +82,10 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 test_idx = np.loadtxt('data/CRU/processed/test_idx.csv', delimiter=',', dtype=np.int32)
 train_idx = np.loadtxt('data/CRU/processed/train_idx.csv', delimiter=',', dtype=np.int32)
 # 创建数据集
-test_dataset = MyDataset(test_idx, 'data/CRU/processed/', transformX=scaler_X.fit_transform, transformY=scaler_y.fit_transform)
-train_dataset = MyDataset(train_idx, 'data/CRU/processed/', transformX=scaler_X.fit_transform, transformY=scaler_y.fit_transform)
+# test_dataset = MyDataset(test_idx, 'data/CRU/processed/', transformX=scaler_X.fit_transform, transformY=scaler_y.fit_transform)
+# train_dataset = MyDataset(train_idx, 'data/CRU/processed/', transformX=scaler_X.fit_transform, transformY=scaler_y.fit_transform)
+test_dataset = MyDataset(test_idx, 'data/CRU/processed/')
+train_dataset = MyDataset(train_idx, 'data/CRU/processed/')
 # 创建数据加载器
 test_loader = DataLoader(test_dataset, batch_size= batch_size, shuffle=True)
 train_loader = DataLoader(train_dataset, batch_size= batch_size, shuffle=True)
@@ -100,15 +102,15 @@ for epoch in range(num_epochs):
         # forward
         scores = model(data)
         loss = criterion(scores, targets)
+        losses.append(loss.item())
         # backward
         optimizer.zero_grad()
         loss.backward()
         # gradient descent update step/adam step
         optimizer.step()
-        losses.append(loss.item())
     # check_accuracy(test_loader, model, error=0.1)
 
-save_model(model, optimizer, save_path('model/', 'model'))
+# save_model(model, optimizer, save_path('model/', 'model'))
 plot_loss(losses)
 
 

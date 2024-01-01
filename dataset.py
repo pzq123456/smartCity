@@ -52,8 +52,6 @@ class MyDataset(Dataset):
             # 设置数据类型
             data = torch.FloatTensor(data)
 
-
-
         if self.transformY:
             # label 增加一个维度
             label = label.unsqueeze(0)
