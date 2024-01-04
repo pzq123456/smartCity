@@ -51,8 +51,11 @@ model.eval() # 设置为评估模式
 MSEs = [] # 保存每个样本的 MSE
 inference = [] # 保存每个样本的预测值
 idx = []
-
+labels = [] # 保存每个样本的真实值
 for i in tqdm.tqdm(range(len(test_dataset))):
+    # 只测试前 6 个样本
+    if i >= 6:
+        break
     data, label = test_dataset[i]
     data = data.unsqueeze(0)
     data = data.to(device=device)
@@ -66,7 +69,8 @@ for i in tqdm.tqdm(range(len(test_dataset))):
         inference.append(scores)
         MSEs.append(MSE(scores, label))
         idx.append(test_idx[i]) # 保存样本的索引
-    # break # 只测试一个样本
+        labels.append(label)
+
 
 print("save result")
 
@@ -87,7 +91,10 @@ for i in range(len(idx)):
     row.extend(inference[i])
     content.append(row)
 # 保存为 csv 文件
-np.savetxt('result.csv', content, delimiter=',', fmt='%s', header=','.join(header))
+np.savetxt('result1.csv', content, delimiter=',', fmt='%s', header=','.join(header))
+
+# labels 单独保存为 csv 文件
+np.savetxt('labels1.csv', labels, delimiter=',', fmt='%s', header=','.join(monthNames))
 
 
 
