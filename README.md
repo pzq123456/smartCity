@@ -91,7 +91,27 @@
    ![](imgs/heatmap.png)
 
 2. 地形数据处理
+   ```py
+   import geopandas
+   import rasterio
+   import matplotlib.pyplot as plt
+   from shapely.geometry import Point
+   # from county.csv 加载 points
+   gdf = geopandas.read_file("county.csv")
+   # 读取 DEM 数据
+   src = rasterio.open("DEM.tif")
+   # src = rasterio.open("slope.tif")
+   from rasterio.plot import show
 
+   fig, ax = plt.subplots()
+
+   # transform rasterio plot to real world coords
+   extent = [src.bounds[0], src.bounds[2], src.bounds[1], src.bounds[3]]
+   ax = rasterio.plot.show(src, extent=extent, ax=ax, cmap="pink")
+
+   gdf.plot(ax=ax)
+   coord_list = [(x, y) for x, y in zip(gdf["geometry"].x, gdf["geometry"].y)]
+   ```
 ## 模型
 1. 概述：
    > - 时间序列分析包括分析时间序列数据的方法，以提取数据的有意义的统计数据和其他特征。时间序列预测是使用模型根据先前观察到的值来预测未来值。虽然回归分析通常被用来测试一个或多个不同时间序列之间的关系，但这种类型的分析通常不被称为“时间序列分析”，这种分析特指单个序列中不同时间点之间的关系。
