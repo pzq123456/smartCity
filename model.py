@@ -6,7 +6,7 @@ from torch import nn  # All neural network modules
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 sequence_length = 120
-# Recurrent neural network (many-to-one)
+# Recurrent neural network (many-to-many)
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_classes):
         super(RNN, self).__init__()
@@ -28,7 +28,7 @@ class RNN(nn.Module):
         return out
 
 
-# Recurrent neural network with GRU (many-to-one)
+# Recurrent neural network with GRU (many-to-many)
 class RNN_GRU(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_classes):
         super(RNN_GRU, self).__init__()

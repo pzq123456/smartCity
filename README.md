@@ -260,8 +260,78 @@
       plt.show()
    ```
 2.模型推理结果误差分析
+
+
+## GRU
+门控循环单元（Gated Recurrent Unit，GRU）是一种递归神经网络（RNN）的变体，旨在解决传统RNN中的长期依赖问题。GRU的设计采用了门控机制，有效地处理了梯度消失和梯度爆炸的挑战，使其在序列建模任务中表现出色。
+
+GRU包含了重置门（Reset Gate）和更新门（Update Gate）两个关键的门控部分。这两个门控部分的引入赋予了网络更灵活的学习能力。以下是对GRU关键部分的详细描述：
+
+1. **重置门（Reset Gate）：** 重置门的作用是决定过去信息的保留程度。它通过一个sigmoid激活函数产生的值，用于控制是否将过去的信息进行重置。重置门的计算公式如下：
+   $$r_t = \sigma(W_r \cdot [h_{t-1}, x_t])$$
+   其中，$W_r$ 是重置门的权重矩阵。
+
+2. **更新门（Update Gate）：** 更新门用于控制新信息的输入。它决定了当前时刻的输入对隐藏状态的影响程度。更新门的计算公式如下：
+   $$z_t = \sigma(W_z \cdot [h_{t-1}, x_t])$$
+   其中，$W_z$ 是更新门的权重矩阵。
+
+通过这两个门的控制，GRU的隐藏状态更新规则如下：
+$$h_t = (1-z_t) \cdot h_{t-1} + z_t \cdot \tilde{h}_t$$
+其中，$\tilde{h}_t$ 是当前时刻的输入，计算公式如下：
+$$\tilde{h}_t = \tanh(W \cdot [r_t \cdot h_{t-1}, x_t])$$
+其中，$W$ 是权重矩阵。
+
+下面是一个简单的用Python和TensorFlow实现的GRU代码片段：
+
+```python
+import tensorflow as tf
+
+class GRU(tf.keras.layers.Layer):
+    def __init__(self, units):
+        super(GRU, self).__init__()
+        self.units = units
+
+    def build(self, input_shape):
+        input_dim = input_shape[-1]
+        self.Wr = self.add_weight(shape=(input_dim + self.units, self.units),
+                                  initializer='uniform',
+                                  trainable=True)
+        self.Wz = self.add_weight(shape=(input_dim + self.units, self.units),
+                                  initializer='uniform',
+                                  trainable=True)
+        self.W = self.add_weight(shape=(input_dim + self.units, self.units),
+                                 initializer='uniform',
+                                 trainable=True)
+
+    def call(self, inputs, initial_state):
+        h_prev = initial_state
+        x = tf.concat([h_prev, inputs], axis=-1)
+
+        r_t = tf.sigmoid(tf.matmul(x, self.Wr))
+        z_t = tf.sigmoid(tf.matmul(x, self.Wz))
+
+        x_tilde = tf.tanh(tf.matmul(tf.concat([r_t * h_prev, inputs], axis=-1), self.W))
+
+        h_t = (1 - z_t) * h_prev + z_t * x_tilde
+
+        return h_t
+
+# 使用例子
+units = 64
+gru_layer = GRU(units)
+
+# 假设输入维度为input_dim
+input_dim = 32
+input_data = tf.random.normal(shape=(1, input_dim))
+initial_state = tf.zeros(shape=(1, units))
+
+output_state = gru_layer(input_data, initial_state)
+```
+
+这是一个简单的GRU实现，供参考。在实际应用中，通常会使用深度学习框架提供的内置GRU层，如TensorFlow或PyTorch。
 ## Reference
 1. [Version 4 of the CRU TS monthly high-resolution gridded multivariate climate dataset](https://www.nature.com/articles/s41597-020-0453-3)
 2. [全国省市县矢量边界提取kml,shp,svg格式下载](https://dx3377.com/map/bound)
 3. [SRTM30 DOCUMENTATION](https://icesat.gsfc.nasa.gov/icesat/tools/SRTM30_Documentation.html)
 4. [Time series](https://en.wikipedia.org/wiki/Time_series)
+5. 
